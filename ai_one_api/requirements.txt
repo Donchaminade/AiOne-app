@@ -1,0 +1,9 @@
+fastapi             # Le framework API
+uvicorn[standard]   # Le serveur ASGI pour exécuter FastAPI
+sqlalchemy          # L'ORM pour interagir avec la base de données
+pymysql             # Le connecteur MySQL pour SQLAlchemy (plus facile sur Windows que mysqlclient)
+python-dotenv       # Pour charger les variables d'environnement depuis le fichier .env
+passlib[bcrypt]     # Pour le hachage sécurisé des mots de passe (futur usage pour les utilisateurs)
+pycryptodome        # Pour le chiffrement AES-256 (utilisé pour les identifiants sensibles)
+email-validator     # Pour la validation des adresses email par Pydantic
+cryptography        # Bibliothèque cryptographique sous-jacente pour pycryptodome et d'autres usages
