@@ -1,9 +1,9 @@
 // ai_one_flutter/lib/screens/contacts/contact_form_screen.dart
 
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart'; // NOUVEL IMPORT
+import 'package:provider/provider.dart';
 import 'package:ai_one_flutter/models/contact.dart';
-import 'package:ai_one_flutter/viewmodels/contact_viewmodel.dart'; // NOUVEL IMPORT
+import 'package:ai_one_flutter/viewmodels/contact_viewmodel.dart';
 import 'package:intl/intl.dart';
 
 class ContactFormScreen extends StatefulWidget {
@@ -30,12 +30,10 @@ class _ContactFormScreenState extends State<ContactFormScreen> {
 
   DateTime? _selectedDateNaissance;
 
-  // L'état de chargement est maintenant géré par le ViewModel
-  // bool _isLoading = false;
-
   @override
   void initState() {
     super.initState();
+    // Initialisation des contrôleurs avec les données existantes si en mode édition
     _nomCompletController = TextEditingController(text: widget.contact?.nomComplet ?? '');
     _professionController = TextEditingController(text: widget.contact?.profession ?? '');
     _numeroTelephoneController = TextEditingController(text: widget.contact?.numeroTelephone ?? '');
@@ -55,6 +53,7 @@ class _ContactFormScreenState extends State<ContactFormScreen> {
 
   @override
   void dispose() {
+    // Libération des contrôleurs pour éviter les fuites de mémoire
     _nomCompletController.dispose();
     _professionController.dispose();
     _numeroTelephoneController.dispose();
@@ -67,12 +66,31 @@ class _ContactFormScreenState extends State<ContactFormScreen> {
     super.dispose();
   }
 
+  // Fonction pour afficher le sélecteur de date de naissance
   Future<void> _selectDateNaissance(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: _selectedDateNaissance ?? DateTime.now(),
       firstDate: DateTime(1900),
       lastDate: DateTime.now(),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            // Personnalisation du thème du DatePicker
+            colorScheme: ColorScheme.light(
+              primary: Theme.of(context).colorScheme.primary, // Couleur principale de votre thème
+              onPrimary: Colors.white, // Couleur du texte sur la couleur principale
+              onSurface: Colors.black87, // Couleur du texte sur la surface
+            ),
+            textButtonTheme: TextButtonThemeData(
+              style: TextButton.styleFrom(
+                foregroundColor: Theme.of(context).colorScheme.primary, // Couleur des boutons
+              ),
+            ),
+          ),
+          child: child!,
+        );
+      },
     );
     if (picked != null && picked != _selectedDateNaissance) {
       setState(() {
@@ -82,9 +100,12 @@ class _ContactFormScreenState extends State<ContactFormScreen> {
     }
   }
 
+  // Fonction de soumission du formulaire
   Future<void> _submitForm() async {
     if (_formKey.currentState!.validate()) {
-      // Pas besoin de setState(_isLoading = true) ici, le ViewModel le gère
+      // Masquer le clavier
+      FocusScope.of(context).unfocus();
+
       final contactViewModel = Provider.of<ContactViewModel>(context, listen: false);
 
       final contactData = {
@@ -100,20 +121,73 @@ class _ContactFormScreenState extends State<ContactFormScreen> {
       };
 
       bool success = false;
+      String message = '';
+
       if (widget.contact == null) {
+        // Mode Ajout
         success = await contactViewModel.addContact(contactData);
+        message = success ? 'Contact ajouté avec succès !' : (contactViewModel.errorMessage ?? 'Erreur lors de l\'ajout.');
       } else {
+        // Mode Modification
         success = await contactViewModel.updateContact(widget.contact!.id, contactData);
+        message = success ? 'Contact mis à jour avec succès !' : (contactViewModel.errorMessage ?? 'Erreur lors de la mise à jour.');
       }
 
-      if (success) {
-        Navigator.of(context).pop(true); // Retourne true pour indiquer un succès
-      } else {
+      if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(contactViewModel.errorMessage ?? 'Une erreur est survenue.')),
+          SnackBar(
+            content: Text(message),
+            backgroundColor: success ? Colors.green : Colors.red, // Feedback visuel couleur
+          ),
         );
+        if (success) {
+          Navigator.of(context).pop(true); // Retourne true pour indiquer un succès et rafraîchir la liste
+        }
       }
     }
+  }
+
+  // Helper pour les champs de texte
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String labelText,
+    TextInputType keyboardType = TextInputType.text,
+    int? maxLines = 1,
+    bool readOnly = false,
+    VoidCallback? onTap,
+    String? Function(String?)? validator,
+    IconData? prefixIcon,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0), // Espacement vertical entre les champs
+      child: TextFormField(
+        controller: controller,
+        keyboardType: keyboardType,
+        maxLines: maxLines,
+        readOnly: readOnly,
+        onTap: onTap,
+        validator: validator,
+        decoration: InputDecoration(
+          labelText: labelText,
+          prefixIcon: prefixIcon != null ? Icon(prefixIcon, color: Theme.of(context).colorScheme.secondary) : null,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10.0), // Coins arrondis pour les champs
+            borderSide: BorderSide(color: Theme.of(context).colorScheme.primary),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10.0),
+            borderSide: BorderSide(color: Theme.of(context).colorScheme.primary, width: 2.0), // Bordure plus épaisse au focus
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10.0),
+            borderSide: BorderSide(color: Colors.grey[400]!, width: 1.0), // Bordure par défaut
+          ),
+          filled: true, // Remplissage du champ
+          fillColor: Colors.white, // Couleur de remplissage
+          contentPadding: const EdgeInsets.symmetric(vertical: 15.0, horizontal: 15.0), // Padding interne
+        ),
+      ),
+    );
   }
 
   @override
@@ -122,20 +196,47 @@ class _ContactFormScreenState extends State<ContactFormScreen> {
     return Consumer<ContactViewModel>(
       builder: (context, contactViewModel, child) {
         return Scaffold(
+          // AppBar avec dégradé et titre dynamique
           appBar: AppBar(
             title: Text(widget.contact == null ? 'Ajouter un Contact' : 'Modifier le Contact'),
+            titleTextStyle: Theme.of(context).textTheme.titleLarge?.copyWith(color: Colors.white),
+            iconTheme: const IconThemeData(color: Colors.white),
+            flexibleSpace: Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Color(0xFF673AB7), Color(0xFF5C6BC0)], // Correspond au dégradé de l'AppBar de ContactDetailScreen
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+              ),
+            ),
           ),
+          // Affichage d'un indicateur de chargement ou du formulaire
           body: contactViewModel.isLoading
-              ? const Center(child: CircularProgressIndicator())
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      CircularProgressIndicator(color: Theme.of(context).colorScheme.primary),
+                      const SizedBox(height: 10),
+                      Text(
+                        widget.contact == null ? 'Ajout en cours...' : 'Mise à jour en cours...',
+                        style: TextStyle(color: Colors.grey[700], fontSize: 16),
+                      ),
+                    ],
+                  ),
+                )
               : SingleChildScrollView(
-                  padding: const EdgeInsets.all(16.0),
+                  padding: const EdgeInsets.all(20.0), // Padding général plus généreux
                   child: Form(
                     key: _formKey,
                     child: Column(
                       children: <Widget>[
-                        TextFormField(
+                        // Champ Nom Complet
+                        _buildTextField(
                           controller: _nomCompletController,
-                          decoration: const InputDecoration(labelText: 'Nom Complet *'),
+                          labelText: 'Nom Complet *',
+                          prefixIcon: Icons.person,
                           validator: (value) {
                             if (value == null || value.isEmpty) {
                               return 'Veuillez entrer le nom complet';
@@ -143,18 +244,24 @@ class _ContactFormScreenState extends State<ContactFormScreen> {
                             return null;
                           },
                         ),
-                        TextFormField(
+                        // Champ Profession
+                        _buildTextField(
                           controller: _professionController,
-                          decoration: const InputDecoration(labelText: 'Profession'),
+                          labelText: 'Profession',
+                          prefixIcon: Icons.work,
                         ),
-                        TextFormField(
+                        // Champ Numéro de Téléphone
+                        _buildTextField(
                           controller: _numeroTelephoneController,
-                          decoration: const InputDecoration(labelText: 'Numéro de Téléphone'),
+                          labelText: 'Numéro de Téléphone',
+                          prefixIcon: Icons.phone,
                           keyboardType: TextInputType.phone,
                         ),
-                        TextFormField(
+                        // Champ Adresse Email
+                        _buildTextField(
                           controller: _adresseEmailController,
-                          decoration: const InputDecoration(labelText: 'Adresse Email *'),
+                          labelText: 'Adresse Email *',
+                          prefixIcon: Icons.email,
                           keyboardType: TextInputType.emailAddress,
                           validator: (value) {
                             if (value == null || value.isEmpty) {
@@ -166,40 +273,64 @@ class _ContactFormScreenState extends State<ContactFormScreen> {
                             return null;
                           },
                         ),
-                        TextFormField(
+                        // Champ Adresse Postale
+                        _buildTextField(
                           controller: _adresseController,
-                          decoration: const InputDecoration(labelText: 'Adresse Postale'),
+                          labelText: 'Adresse Postale',
+                          prefixIcon: Icons.location_on,
                         ),
-                        TextFormField(
+                        // Champ Entreprise / Organisation
+                        _buildTextField(
                           controller: _entrepriseOrganisationController,
-                          decoration: const InputDecoration(labelText: 'Entreprise / Organisation'),
+                          labelText: 'Entreprise / Organisation',
+                          prefixIcon: Icons.business,
                         ),
-                        TextFormField(
+                        // Champ Date de Naissance (avec sélecteur de date)
+                        _buildTextField(
                           controller: _dateNaissanceController,
-                          decoration: InputDecoration(
-                            labelText: 'Date de Naissance',
-                            suffixIcon: IconButton(
-                              icon: const Icon(Icons.calendar_today),
-                              onPressed: () => _selectDateNaissance(context),
-                            ),
-                          ),
+                          labelText: 'Date de Naissance',
+                          prefixIcon: Icons.calendar_today,
                           readOnly: true,
                           onTap: () => _selectDateNaissance(context),
                         ),
-                        TextFormField(
+                        // Champ Tags / Labels
+                        _buildTextField(
                           controller: _tagsLabelsController,
-                          decoration: const InputDecoration(labelText: 'Tags / Labels (ex: Famille, Travail)'),
+                          labelText: 'Tags / Labels (ex: Famille, Travail)',
+                          prefixIcon: Icons.label,
                         ),
-                        TextFormField(
+                        // Champ Notes Spécifiques (multi-lignes)
+                        _buildTextField(
                           controller: _notesSpecifiquesController,
-                          decoration: const InputDecoration(labelText: 'Notes Spécifiques'),
+                          labelText: 'Notes Spécifiques',
+                          prefixIcon: Icons.notes,
                           maxLines: 3,
                           keyboardType: TextInputType.multiline,
                         ),
-                        const SizedBox(height: 20),
-                        ElevatedButton(
-                          onPressed: _submitForm,
-                          child: Text(widget.contact == null ? 'Ajouter' : 'Mettre à Jour'),
+                        const SizedBox(height: 30), // Espacement avant le bouton
+
+                        // Bouton de soumission stylisé
+                        SizedBox(
+                          width: double.infinity, // Bouton pleine largeur
+                          height: 55, // Hauteur du bouton
+                          child: ElevatedButton.icon(
+                            onPressed: _submitForm,
+                            icon: Icon(
+                              widget.contact == null ? Icons.add : Icons.save,
+                              color: Colors.white,
+                            ),
+                            label: Text(
+                              widget.contact == null ? 'Ajouter le Contact' : 'Mettre à Jour',
+                              style: const TextStyle(fontSize: 18, color: Colors.white),
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Theme.of(context).colorScheme.primary, // Couleur du thème
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12.0), // Coins arrondis
+                              ),
+                              elevation: 5, // Ombre
+                            ),
+                          ),
                         ),
                       ],
                     ),

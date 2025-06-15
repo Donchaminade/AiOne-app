@@ -3,8 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:ai_one_flutter/models/note.dart';
-// ApiService toujours pour les appels directs
-import 'package:ai_one_flutter/viewmodels/note_viewmodel.dart'; // NOUVEL IMPORT
+import 'package:ai_one_flutter/viewmodels/note_viewmodel.dart';
 
 class NoteFormScreen extends StatefulWidget {
   final Note? note;
@@ -44,8 +43,50 @@ class _NoteFormScreenState extends State<NoteFormScreen> {
     super.dispose();
   }
 
+  // Helper pour les champs de texte (réutilisé et adapté des écrans précédents)
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String labelText,
+    TextInputType keyboardType = TextInputType.text,
+    int? maxLines = 1,
+    String? Function(String?)? validator,
+    IconData? prefixIcon,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0), // Espacement vertical entre les champs
+      child: TextFormField(
+        controller: controller,
+        keyboardType: keyboardType,
+        maxLines: maxLines,
+        validator: validator,
+        decoration: InputDecoration(
+          labelText: labelText,
+          prefixIcon: prefixIcon != null ? Icon(prefixIcon, color: Theme.of(context).colorScheme.secondary) : null,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10.0), // Coins arrondis pour les champs
+            borderSide: BorderSide(color: Theme.of(context).colorScheme.primary),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10.0),
+            borderSide: BorderSide(color: Theme.of(context).colorScheme.primary, width: 2.0), // Bordure plus épaisse au focus
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10.0),
+            borderSide: BorderSide(color: Colors.grey[400]!, width: 1.0), // Bordure par défaut
+          ),
+          filled: true, // Remplissage du champ
+          fillColor: Colors.white, // Couleur de remplissage
+          contentPadding: const EdgeInsets.symmetric(vertical: 15.0, horizontal: 15.0), // Padding interne
+        ),
+      ),
+    );
+  }
+
   Future<void> _submitForm() async {
     if (_formKey.currentState!.validate()) {
+      // Masquer le clavier
+      FocusScope.of(context).unfocus();
+
       final noteViewModel = Provider.of<NoteViewModel>(context, listen: false);
 
       final noteData = {
@@ -57,18 +98,28 @@ class _NoteFormScreenState extends State<NoteFormScreen> {
       };
 
       bool success = false;
+      String message = '';
+
       if (widget.note == null) {
+        // Mode Ajout
         success = await noteViewModel.addNote(noteData);
+        message = success ? 'Note ajoutée avec succès !' : (noteViewModel.errorMessage ?? 'Erreur lors de l\'ajout.');
       } else {
+        // Mode Modification
         success = await noteViewModel.updateNote(widget.note!.id, noteData);
+        message = success ? 'Note mise à jour avec succès !' : (noteViewModel.errorMessage ?? 'Erreur lors de la mise à jour.');
       }
 
-      if (success) {
-        Navigator.of(context).pop(true);
-      } else {
+      if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(noteViewModel.errorMessage ?? 'Une erreur est survenue.')),
+          SnackBar(
+            content: Text(message),
+            backgroundColor: success ? Colors.green : Colors.red,
+          ),
         );
+        if (success) {
+          Navigator.of(context).pop(true); // Retourne true pour indiquer un succès
+        }
       }
     }
   }
@@ -80,18 +131,43 @@ class _NoteFormScreenState extends State<NoteFormScreen> {
         return Scaffold(
           appBar: AppBar(
             title: Text(widget.note == null ? 'Ajouter une Note' : 'Modifier la Note'),
+            titleTextStyle: Theme.of(context).textTheme.titleLarge?.copyWith(color: Colors.white),
+            iconTheme: const IconThemeData(color: Colors.white),
+            flexibleSpace: Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Color(0xFF673AB7), Color(0xFF5C6BC0)], // Correspond au dégradé des autres écrans
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+              ),
+            ),
           ),
           body: noteViewModel.isLoading
-              ? const Center(child: CircularProgressIndicator())
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      CircularProgressIndicator(color: Theme.of(context).colorScheme.primary),
+                      const SizedBox(height: 10),
+                      Text(
+                        widget.note == null ? 'Ajout en cours...' : 'Mise à jour en cours...',
+                        style: TextStyle(color: Colors.grey[700], fontSize: 16),
+                      ),
+                    ],
+                  ),
+                )
               : SingleChildScrollView(
-                  padding: const EdgeInsets.all(16.0),
+                  padding: const EdgeInsets.all(20.0), // Padding plus généreux
                   child: Form(
                     key: _formKey,
                     child: Column(
                       children: <Widget>[
-                        TextFormField(
+                        // Champ Titre
+                        _buildTextField(
                           controller: _titreController,
-                          decoration: const InputDecoration(labelText: 'Titre *'),
+                          labelText: 'Titre *',
+                          prefixIcon: Icons.title,
                           validator: (value) {
                             if (value == null || value.isEmpty) {
                               return 'Veuillez entrer le titre de la note';
@@ -99,28 +175,56 @@ class _NoteFormScreenState extends State<NoteFormScreen> {
                             return null;
                           },
                         ),
-                        TextFormField(
+                        // Champ Sous-titre
+                        _buildTextField(
                           controller: _sousTitreController,
-                          decoration: const InputDecoration(labelText: 'Sous-titre'),
+                          labelText: 'Sous-titre',
+                          prefixIcon: Icons.short_text,
                         ),
-                        TextFormField(
+                        // Champ Contenu
+                        _buildTextField(
                           controller: _contenuController,
-                          decoration: const InputDecoration(labelText: 'Contenu'),
-                          maxLines: 5,
+                          labelText: 'Contenu',
+                          prefixIcon: Icons.description,
+                          maxLines: 8, // Plus de lignes pour le contenu
                           keyboardType: TextInputType.multiline,
                         ),
-                        TextFormField(
+                        // Champ Dossiers
+                        _buildTextField(
                           controller: _dossiersController,
-                          decoration: const InputDecoration(labelText: 'Dossiers (ex: Travail, Personnel)'),
+                          labelText: 'Dossiers (ex: Travail, Personnel)',
+                          prefixIcon: Icons.folder_open,
                         ),
-                        TextFormField(
+                        // Champ Tags / Labels
+                        _buildTextField(
                           controller: _tagsLabelsController,
-                          decoration: const InputDecoration(labelText: 'Tags / Labels (ex: Urgent, Idée)'),
+                          labelText: 'Tags / Labels (ex: Urgent, Idée)',
+                          prefixIcon: Icons.tag,
                         ),
-                        const SizedBox(height: 20),
-                        ElevatedButton(
-                          onPressed: _submitForm,
-                          child: Text(widget.note == null ? 'Ajouter' : 'Mettre à Jour'),
+                        const SizedBox(height: 30),
+
+                        // Bouton de soumission stylisé
+                        SizedBox(
+                          width: double.infinity,
+                          height: 55,
+                          child: ElevatedButton.icon(
+                            onPressed: _submitForm,
+                            icon: Icon(
+                              widget.note == null ? Icons.add_circle_outline : Icons.save,
+                              color: Colors.white,
+                            ),
+                            label: Text(
+                              widget.note == null ? 'Ajouter la Note' : 'Mettre à Jour',
+                              style: const TextStyle(fontSize: 18, color: Colors.white),
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Theme.of(context).colorScheme.primary,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12.0),
+                              ),
+                              elevation: 5,
+                            ),
+                          ),
                         ),
                       ],
                     ),

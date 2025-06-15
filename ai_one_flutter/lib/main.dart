@@ -3,23 +3,21 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import 'package:ai_one_flutter/screens/contacts/contact_list_screen.dart';
-import 'package:ai_one_flutter/screens/notes/note_list_screen.dart';
-import 'package:ai_one_flutter/screens/credentials/credential_list_screen.dart';
-import 'package:ai_one_flutter/screens/tasks/task_list_screen.dart';
-
+// Importez vos ViewModels
 import 'package:ai_one_flutter/viewmodels/contact_viewmodel.dart';
 import 'package:ai_one_flutter/viewmodels/note_viewmodel.dart';
 import 'package:ai_one_flutter/viewmodels/credential_viewmodel.dart';
 import 'package:ai_one_flutter/viewmodels/task_viewmodel.dart';
-import 'package:ai_one_flutter/viewmodels/auth_viewmodel.dart'; // NOUVEL IMPORT
-import 'package:ai_one_flutter/screens/auth/login_screen.dart'; // NOUVEL IMPORT
+
+// Importez le nouveau MainScreen
+import 'package:ai_one_flutter/screens/main_screen.dart';
+// Importez le Splash Screen
+import 'package:ai_one_flutter/screens/splash_screen.dart';
 
 void main() {
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => AuthViewModel()), // Ajout du AuthViewModel
         ChangeNotifierProvider(create: (_) => ContactViewModel()),
         ChangeNotifierProvider(create: (_) => NoteViewModel()),
         ChangeNotifierProvider(create: (_) => CredentialViewModel()),
@@ -36,156 +34,227 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'AI One App',
+      title: 'AI One',
+      debugShowCheckedModeBanner: false, // Enlève le bandeau "Debug"
       theme: ThemeData(
-        primarySwatch: Colors.blue,
+        // Utilisation de primarySwatch pour les couleurs par défaut
+        primarySwatch: Colors.indigo, // Une couleur principale de base
+        // Adapte la densité visuelle selon la plateforme
         visualDensity: VisualDensity.adaptivePlatformDensity,
-      ),
-      // Utilisation de Consumer pour écouter l'état d'authentification
-      home: Consumer<AuthViewModel>(
-        builder: (context, authViewModel, child) {
-          if (authViewModel.isLoading) {
-            return const Scaffold(
-              body: Center(child: CircularProgressIndicator()),
-            );
-          } else if (authViewModel.isAuthenticated) {
-            return const MainScreen();
-          } else {
-            return const LoginScreen();
-          }
-        },
-      ),
-    );
-  }
-}
 
-class MainScreen extends StatefulWidget {
-  const MainScreen({super.key});
+        // Définition d'un ColorScheme pour un contrôle plus fin des couleurs du thème
+        colorScheme:
+            ColorScheme.fromSwatch(
+              primarySwatch: Colors.indigo, // Une couleur primaire forte
+              accentColor:
+                  Colors.deepPurpleAccent, // Une couleur secondaire/accent
+            ).copyWith(
+              // Définition des couleurs primaires et secondaires spécifiques
+              // Ces couleurs correspondent au dégradé utilisé dans l'AppBar et le Dashboard
+              primary: const Color(
+                0xFF673AB7,
+              ), // Violet profond (pour l'AppBar, icônes principales, etc.)
+              secondary: const Color(
+                0xFF5C6BC0,
+              ), // Bleu-indigo (pour les FAB, boutons d'action, etc.)
+              surface: Colors
+                  .white, // Couleur de fond générale de l'application
+              error: Colors.red, // Couleur pour les messages d'erreur
+              onPrimary: Colors
+                  .white, // Couleur du texte/icônes sur la couleur primaire
+              onSecondary: Colors
+                  .white, // Couleur du texte/icônes sur la couleur secondaire
+              onSurface:
+                  Colors.black87, // Couleur du texte/icônes sur le fond
+              onError: Colors
+                  .white, // Couleur du texte/icônes sur la couleur d'erreur
+            ),
 
-  @override
-  State<MainScreen> createState() => _MainScreenState();
-}
-
-class _MainScreenState extends State<MainScreen> {
-  int _selectedIndex = 0;
-
-  final List<Widget> _screens = [
-    const ContactListScreen(),
-    const NoteListScreen(),
-    const CredentialListScreen(),
-    const TaskListScreen(),
-  ];
-
-  final List<String> _titles = const [
-    'Contacts',
-    'Notes',
-    'Identifiants',
-    'Tâches',
-  ];
-
-  @override
-  void initState() {
-    super.initState();
-    // Re-initialise les données au démarrage du MainScreen (après login)
-    // Cela garantit que les listes sont à jour après la connexion.
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<ContactViewModel>(context, listen: false).fetchContacts();
-      Provider.of<NoteViewModel>(context, listen: false).fetchNotes();
-      Provider.of<CredentialViewModel>(context, listen: false).fetchCredentials();
-      Provider.of<TaskViewModel>(context, listen: false).fetchTasks();
-    });
-  }
-
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
-  }
-
-  void _logout() async {
-    final authViewModel = Provider.of<AuthViewModel>(context, listen: false);
-    await authViewModel.logout();
-    // Après logout, le Consumer dans MyApp redirigera vers LoginScreen.
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(_titles[_selectedIndex]),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: _logout,
-            tooltip: 'Déconnexion',
+        // Style de texte global pour l'application
+        textTheme: const TextTheme(
+          displayLarge: TextStyle(
+            fontSize: 96.0,
+            fontWeight: FontWeight.w300,
+            color: Colors.black87,
           ),
-        ],
-      ),
-      body: _screens[_selectedIndex],
-      drawer: Drawer(
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: <Widget>[
-            const DrawerHeader(
-              decoration: BoxDecoration(
-                color: Colors.blue,
-              ),
-              child: Text(
-                'AI One Menu',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 24,
-                ),
-              ),
+          displayMedium: TextStyle(
+            fontSize: 60.0,
+            fontWeight: FontWeight.w400,
+            color: Colors.black87,
+          ),
+          displaySmall: TextStyle(
+            fontSize: 48.0,
+            fontWeight: FontWeight.w400,
+            color: Colors.black87,
+          ),
+          headlineMedium: TextStyle(
+            fontSize: 34.0,
+            fontWeight: FontWeight.w400,
+            color: Colors.black87,
+          ),
+          headlineSmall: TextStyle(
+            fontSize: 24.0,
+            fontWeight: FontWeight.w400,
+            color: Colors.black87,
+          ),
+          titleLarge: TextStyle(
+            fontSize: 22.0,
+            fontWeight: FontWeight.bold,
+            color: Colors.black87,
+          ), // Utilisé pour les titres des listes (e.g., TaskListScreen)
+          titleMedium: TextStyle(
+            fontSize: 18.0,
+            fontWeight: FontWeight.w600,
+            color: Colors.black87,
+          ), // Utilisé pour les sous-titres importants
+          bodyLarge: TextStyle(
+            fontSize: 16.0,
+            color: Colors.black87,
+          ), // Texte principal
+          bodyMedium: TextStyle(
+            fontSize: 14.0,
+            color: Colors.black87,
+          ), // Texte de corps par défaut
+          labelLarge: TextStyle(
+            fontSize: 14.0,
+            fontWeight: FontWeight.w500,
+            color: Colors.black87,
+          ), // Pour les boutons par exemple
+          labelSmall: TextStyle(
+            fontSize: 10.0,
+            fontWeight: FontWeight.w400,
+            color: Colors.black87,
+          ), // Pour les petites légendes
+          bodySmall: TextStyle(
+            fontSize: 12.0,
+            color: Colors.black54,
+          ), // Texte secondaire ou descriptions courtes
+        ),
+
+        // Thème global pour les cartes (Card)
+        cardTheme: CardThemeData(
+          // Changed from CardTheme to CardThemeData
+          elevation: 4.0, // Ombre des cartes
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12.0),
+          ), // Bords arrondis
+          margin: const EdgeInsets.symmetric(
+            horizontal: 8.0,
+            vertical: 4.0,
+          ), // Marge par défaut
+        ),
+
+        // Style des AppBars
+        appBarTheme: const AppBarTheme(
+          elevation:
+              0, // Pas d'ombre par défaut (le dégradé donne déjà un effet)
+          backgroundColor: Colors
+              .transparent, // Couleur de fond transparente pour le dégradé
+          iconTheme: IconThemeData(color: Colors.white), // Icônes blanches
+          actionsIconTheme: IconThemeData(
+            color: Colors.white,
+          ), // Icônes d'action blanches
+          titleTextStyle: TextStyle(
+            color: Colors.white,
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+
+        // Thème des FloatingActionButton
+        floatingActionButtonTheme: FloatingActionButtonThemeData(
+          backgroundColor: const Color(
+            0xFF5C6BC0,
+          ), // Utilise la couleur secondaire
+          foregroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15.0),
+          ),
+          elevation: 8.0,
+        ),
+
+        // Thème des boutons surélevés (ElevatedButton)
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            foregroundColor: Colors.white, // Texte blanc sur le bouton
+            backgroundColor: const Color(0xFF673AB7), // Couleur primaire
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10.0), // Bords arrondis
             ),
-            ListTile(
-              leading: const Icon(Icons.person),
-              title: const Text('Contacts'),
-              selected: _selectedIndex == 0,
-              onTap: () {
-                _onItemTapped(0);
-                Navigator.pop(context);
-              },
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            textStyle: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
             ),
-            ListTile(
-              leading: const Icon(Icons.note),
-              title: const Text('Notes'),
-              selected: _selectedIndex == 1,
-              onTap: () {
-                _onItemTapped(1);
-                Navigator.pop(context);
-              },
+          ),
+        ),
+
+        // Thème des TextButton
+        textButtonTheme: TextButtonThemeData(
+          style: TextButton.styleFrom(
+            foregroundColor: const Color(0xFF673AB7), // Couleur primaire
+            textStyle: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
             ),
-            ListTile(
-              leading: const Icon(Icons.lock),
-              title: const Text('Identifiants'),
-              selected: _selectedIndex == 2,
-              onTap: () {
-                _onItemTapped(2);
-                Navigator.pop(context);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.task),
-              title: const Text('Tâches'),
-              selected: _selectedIndex == 3,
-              onTap: () {
-                _onItemTapped(3);
-                Navigator.pop(context);
-              },
-            ),
-            const Divider(), // Séparateur
-            ListTile(
-              leading: const Icon(Icons.logout),
-              title: const Text('Déconnexion'),
-              onTap: () {
-                Navigator.pop(context); // Ferme le tiroir
-                _logout(); // Appelle la fonction de déconnexion
-              },
-            ),
-          ],
+          ),
+        ),
+
+        // Thème des input fields (TextField, TextFormField)
+        inputDecorationTheme: InputDecorationTheme(
+          contentPadding: const EdgeInsets.symmetric(
+            vertical: 12.0,
+            horizontal: 16.0,
+          ),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10.0),
+            borderSide: BorderSide.none, // Pas de bordure par défaut
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10.0),
+            borderSide: BorderSide(color: Colors.grey.shade300, width: 1.0),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10.0),
+            borderSide: BorderSide(
+              color: const Color(0xFF673AB7),
+              width: 2.0,
+            ), // Bordure colorée au focus
+          ),
+          errorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10.0),
+            borderSide: const BorderSide(color: Colors.red, width: 2.0),
+          ),
+          focusedErrorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10.0),
+            borderSide: const BorderSide(color: Colors.red, width: 2.0),
+          ),
+          filled: true,
+          fillColor:
+              Colors.grey.shade100, // Fond légèrement grisé pour les champs
+          hintStyle: TextStyle(color: Colors.grey.shade500),
+          labelStyle: TextStyle(color: Colors.grey.shade700),
+        ),
+
+        // Thème de la BottomNavigationBar
+        bottomNavigationBarTheme: BottomNavigationBarThemeData(
+          selectedItemColor: const Color(0xFF673AB7), // Couleur primaire
+          unselectedItemColor: Colors.grey.shade600,
+          backgroundColor: Colors.white,
+          type: BottomNavigationBarType
+              .fixed, // Tous les labels sont toujours visibles
+          selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold),
+          unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.normal),
+          elevation: 8.0, // Ombre
         ),
       ),
+      home: const SplashScreen(), // Commencer par le splash screen
+      routes: {
+        '/home': (context) =>
+            const MainScreen(), // Route vers l'écran principal
+        // Ajoutez d'autres routes si nécessaire pour les formulaires de création/édition
+        // '/addContact': (context) => ContactFormScreen(), // Exemple de route pour ajouter un contact
+      },
     );
   }
 }
