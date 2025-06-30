@@ -4,8 +4,11 @@ class Credential {
   final int id;
   final String nomSiteCompte;
   final String nomUtilisateurEmail;
-  final String? motDePasseChiffre; // Le mot de passe déchiffré lors de la récupération d'un seul item
-  final String? autresInfosChiffre; // Les autres infos déchiffrées
+  // motDePasseChiffre est utilisé pour l'envoi de données (création/maj)
+  // Il ne sera JAMAIS reçu du backend pour des raisons de sécurité (le backend stocke un hash)
+  final String? motDePasseChiffre;
+  // autresInfosChiffre stocke les données en clair (pas de chiffrement côté PHP)
+  final String? autresInfosChiffre;
   final String? categorie;
   final DateTime createdAt;
   final DateTime? updatedAt;
@@ -26,8 +29,10 @@ class Credential {
       id: json['id'] as int,
       nomSiteCompte: json['nom_site_compte'] as String,
       nomUtilisateurEmail: json['nom_utilisateur_email'] as String,
-      motDePasseChiffre: json['mot_de_passe_chiffre'] as String?,
-      autresInfosChiffre: json['autres_infos_chiffre'] as String?,
+      // Nous ne recevons PLUS le mot de passe du backend pour des raisons de sécurité.
+      // Donc, pas besoin de le parser ici. Il sera null si non fourni, ce qui est le comportement attendu.
+      motDePasseChiffre: null, // Toujours null lors de la lecture depuis l'API
+      autresInfosChiffre: json['autres_infos_chiffre'] as String?, // Maintenant en clair, pas de décodage spécial
       categorie: json['categorie'] as String?,
       createdAt: DateTime.parse(json['created_at'] as String),
       updatedAt: json['updated_at'] != null
@@ -41,11 +46,16 @@ class Credential {
       'id': id,
       'nom_site_compte': nomSiteCompte,
       'nom_utilisateur_email': nomUtilisateurEmail,
-      'mot_de_passe_chiffre': motDePasseChiffre,
-      'autres_infos_chiffre': autresInfosChiffre,
+      // Incluez mot_de_passe_chiffre SEULEMENT si vous le définissez pour créer/mettre à jour
+      // Le backend se chargera de le hacher.
+      if (motDePasseChiffre != null) 'mot_de_passe_chiffre': motDePasseChiffre,
+      'autres_infos_chiffre': autresInfosChiffre, // Envoyez-le en clair
       'categorie': categorie,
-      'created_at': createdAt.toIso8601String(),
-      'updated_at': updatedAt?.toIso8601String(),
+      // createdAt et updatedAt ne sont généralement pas envoyés lors de la création/mise à jour,
+      // car ils sont générés par la base de données.
+      // Si votre API s'attend à les recevoir, gardez-les, sinon ils peuvent être omis.
+      // 'created_at': createdAt.toIso8601String(),
+      // 'updated_at': updatedAt?.toIso8601String(),
     };
   }
 

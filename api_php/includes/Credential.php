@@ -10,61 +10,27 @@ class Credential {
     public $nom_site_compte;
     public $nom_utilisateur_email;
     public $mot_de_passe_chiffre; // Stockera le HASH du mot de passe
-    public $autres_infos_chiffre; // Stockera les données chiffrées
+    public $autres_infos_chiffre; // Stockera les données EN CLAIR
     public $categorie;
     public $created_at;
     public $updated_at;
 
-    // Pour le chiffrement/déchiffrement
-    // !!! ATTENTION EN PRODUCTION: Cette clé doit être chargée de manière sécurisée
-    // (par ex. variables d'environnement, secrets manager) et NON codée en dur.
-    // REMPLACEZ 'YOUR_SECURE_ENCRYPTION_KEY_32_BYTES_LONG' par une clé aléatoire et sécurisée de 32 octets (256 bits).
-    // Exemple de génération : openssl_random_pseudo_bytes(32)
-    private $encryption_key = 'votre_cle_secrete_de_32_octets_ici!'; // Changez cette clé en PROD !
-    private $cipher_algo = 'aes-256-cbc';
-
+    // Constructeur
     public function __construct($db) {
         $this->conn = $db;
-        // Assurez-vous que la clé est de la bonne longueur pour l'algorithme choisi
-        // Pour AES-256-CBC, la clé doit faire 32 octets
-        if (mb_strlen($this->encryption_key, '8bit') !== 32) {
-            // En production, vous devriez logger ceci ou gérer une erreur fatale
-            error_log("Credential class: Encryption key is not 32 bytes long. Please generate a proper key.");
-            // Pour l'exemple, nous allons la tronquer/étendre (PAS RECOMMANDÉ EN PROD)
-            $this->encryption_key = str_pad(mb_substr($this->encryption_key, 0, 32, '8bit'), 32, "\0");
-        }
+        // Plus besoin de gérer la clé de chiffrement ici puisque nous ne chiffrons plus les données.
     }
 
-    // --- Méthodes d'aide pour le chiffrement/déchiffrement ---
-    private function encrypt($data) {
-        if (empty($data)) return null;
-        $iv = openssl_random_pseudo_bytes(openssl_cipher_iv_length($this->cipher_algo));
-        $encrypted_data = openssl_encrypt($data, $this->cipher_algo, $this->encryption_key, 0, $iv);
-        // Retourne le IV concaténé avec les données chiffrées (pour le déchiffrement)
-        return base64_encode($iv . $encrypted_data);
-    }
-
-    private function decrypt($data) {
-        if (empty($data)) return null;
-        $decoded_data = base64_decode($data);
-        $iv_length = openssl_cipher_iv_length($this->cipher_algo);
-        $iv = substr($decoded_data, 0, $iv_length);
-        $encrypted_data = substr($decoded_data, $iv_length);
-        return openssl_decrypt($encrypted_data, $this->cipher_algo, $this->encryption_key, 0, $iv);
-    }
-
-    // Read all credentials (attention: mot_de_passe_chiffre ne doit jamais être retourné en clair)
+    // Read all credentials (maintenu sans mot de passe et autres infos pour la liste)
     public function read() {
-        // Ne sélectionnez PAS le mot_de_passe_chiffre et autres_infos_chiffre directement pour l'affichage général
-        // Si vous avez besoin d'autres_infos_chiffre, il faut le déchiffrer APRÈS la récupération
-        $query = "SELECT id, nom_site_compte, nom_utilisateur_email, autres_infos_chiffre, categorie, created_at, updated_at
+        $query = "SELECT id, nom_site_compte, nom_utilisateur_email, categorie, created_at, updated_at
                   FROM " . $this->table_name . " ORDER BY created_at DESC";
         $stmt = $this->conn->prepare($query);
         $stmt->execute();
         return $stmt;
     }
 
-    // Read single credential (pour la vérification ou la récupération d'infos chiffrées)
+    // Read single credential (inclut toutes les infos, mais 'autres_infos_chiffre' sera en clair)
     public function readOne() {
         $query = "SELECT id, nom_site_compte, nom_utilisateur_email, mot_de_passe_chiffre, autres_infos_chiffre, categorie, created_at, updated_at
                   FROM " . $this->table_name . " WHERE id = ? LIMIT 0,1";
@@ -76,8 +42,8 @@ class Credential {
         if ($row) {
             $this->nom_site_compte = $row['nom_site_compte'];
             $this->nom_utilisateur_email = $row['nom_utilisateur_email'];
-            $this->mot_de_passe_chiffre = $row['mot_de_passe_chiffre']; // Ceci est le hash, pas le mot de passe clair
-            $this->autres_infos_chiffre = $this->decrypt($row['autres_infos_chiffre']); // Déchiffre ici
+            $this->mot_de_passe_chiffre = $row['mot_de_passe_chiffre']; // Ceci est le hash
+            $this->autres_infos_chiffre = $row['autres_infos_chiffre']; // Maintenant en clair, pas de déchiffrement
             $this->categorie = $row['categorie'];
             $this->created_at = $row['created_at'];
             $this->updated_at = $row['updated_at'];
@@ -102,16 +68,17 @@ class Credential {
         $this->nom_utilisateur_email = htmlspecialchars(strip_tags($this->nom_utilisateur_email));
         $this->categorie = htmlspecialchars(strip_tags($this->categorie));
 
-        // Hachage du mot de passe (utiliser PASSWORD_BCRYPT par défaut)
-        // Le mot de passe clair doit être passé à cette méthode, pas le hash
+        // Hachage du mot de passe (toujours utiliser password_hash pour la sécurité)
         $hashed_password = password_hash($this->mot_de_passe_chiffre, PASSWORD_DEFAULT);
-        $encrypted_other_info = $this->encrypt($this->autres_infos_chiffre);
+        
+        // Les autres informations sont stockées en clair
+        $plain_other_info = $this->autres_infos_chiffre; // Pas de chiffrement
 
         // Bind values
         $stmt->bindParam(":nom_site_compte", $this->nom_site_compte);
         $stmt->bindParam(":nom_utilisateur_email", $this->nom_utilisateur_email);
         $stmt->bindParam(":mot_de_passe_chiffre", $hashed_password); // Stocke le HASH
-        $stmt->bindParam(":autres_infos_chiffre", $encrypted_other_info); // Stocke les données chiffrées
+        $stmt->bindParam(":autres_infos_chiffre", $plain_other_info); // Stocke les données en clair
         $stmt->bindParam(":categorie", $this->categorie);
 
         if ($stmt->execute()) {
@@ -122,22 +89,20 @@ class Credential {
 
     // Update credential
     public function update() {
-        // IMPORTANT: Lors de la mise à jour, si le mot de passe n'est pas fourni,
-        // ne le mettez pas à jour pour ne pas écraser le hash existant.
-        // Si un nouveau mot de passe est fourni, hachez-le.
+        $query_parts = [];
+        $query_parts[] = "nom_site_compte=:nom_site_compte";
+        $query_parts[] = "nom_utilisateur_email=:nom_utilisateur_email";
 
-        $query = "UPDATE " . $this->table_name . " SET
-                    nom_site_compte=:nom_site_compte,
-                    nom_utilisateur_email=:nom_utilisateur_email,";
-
-        // Ajoutez le champ mot_de_passe_chiffre à la requête de mise à jour SEULEMENT s'il est fourni
+        // Mettre à jour le mot de passe seulement si un nouveau est fourni (hacher si fourni)
         if (!empty($this->mot_de_passe_chiffre)) {
-            $query .= " mot_de_passe_chiffre=:mot_de_passe_chiffre,";
+            $query_parts[] = "mot_de_passe_chiffre=:mot_de_passe_chiffre";
         }
-        $query .= " autres_infos_chiffre=:autres_infos_chiffre,
-                    categorie=:categorie,
-                    updated_at=CURRENT_TIMESTAMP
-                  WHERE id = :id";
+        
+        $query_parts[] = "autres_infos_chiffre=:autres_infos_chiffre"; // Mettre à jour en clair
+        $query_parts[] = "categorie=:categorie";
+        $query_parts[] = "updated_at=CURRENT_TIMESTAMP";
+
+        $query = "UPDATE " . $this->table_name . " SET " . implode(", ", $query_parts) . " WHERE id = :id";
 
         $stmt = $this->conn->prepare($query);
 
@@ -147,12 +112,12 @@ class Credential {
         $this->categorie = htmlspecialchars(strip_tags($this->categorie));
         $this->id = htmlspecialchars(strip_tags($this->id));
 
-        $encrypted_other_info = $this->encrypt($this->autres_infos_chiffre);
+        $plain_other_info = $this->autres_infos_chiffre; // Pas de chiffrement
 
         // Bind values
         $stmt->bindParam(":nom_site_compte", $this->nom_site_compte);
         $stmt->bindParam(":nom_utilisateur_email", $this->nom_utilisateur_email);
-        $stmt->bindParam(":autres_infos_chiffre", $encrypted_other_info);
+        $stmt->bindParam(":autres_infos_chiffre", $plain_other_info); // Stocke les données en clair
         $stmt->bindParam(":categorie", $this->categorie);
         $stmt->bindParam(":id", $this->id);
 
@@ -181,8 +146,7 @@ class Credential {
         return false;
     }
 
-    // Méthode pour vérifier un mot de passe (si vous aviez une authentification)
-    // Elle ne fait pas partie du CRUD mais est essentielle pour la sécurité des credentials
+    // Méthode pour vérifier un mot de passe (haché)
     public function verifyPassword($plain_password) {
         $query = "SELECT mot_de_passe_chiffre FROM " . $this->table_name . " WHERE id = ? LIMIT 0,1";
         $stmt = $this->conn->prepare($query);

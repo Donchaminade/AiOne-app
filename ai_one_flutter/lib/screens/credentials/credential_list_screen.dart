@@ -1,5 +1,3 @@
-// ai_one_flutter/lib/screens/credentials/credential_list_screen.dart
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:ai_one_flutter/models/credential.dart';
@@ -17,20 +15,31 @@ class CredentialListScreen extends StatefulWidget {
 class _CredentialListScreenState extends State<CredentialListScreen> {
   final TextEditingController _searchController = TextEditingController();
 
+  // Déclarez la fonction de listener pour pouvoir la supprimer correctement
+  void _searchListener() {
+    Provider.of<CredentialViewModel>(
+      context,
+      listen: false,
+    ).setSearchTerm(_searchController.text);
+  }
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<CredentialViewModel>(context, listen: false).fetchCredentials();
+      Provider.of<CredentialViewModel>(
+        context,
+        listen: false,
+      ).fetchCredentials();
     });
-    _searchController.addListener(() {
-      Provider.of<CredentialViewModel>(context, listen: false).setSearchTerm(_searchController.text);
-    });
+    // Ajoutez le listener nommé
+    _searchController.addListener(_searchListener);
   }
 
   @override
   void dispose() {
-    _searchController.removeListener(() {});
+    // Supprimez le listener nommé
+    _searchController.removeListener(_searchListener);
     _searchController.dispose();
     super.dispose();
   }
@@ -42,6 +51,12 @@ class _CredentialListScreenState extends State<CredentialListScreen> {
       ),
     );
     if (result == true) {
+      // Rechargez les identifiants après une opération réussie
+      // ou mettez à jour l'état localement si votre ViewModel le permet déjà.
+      Provider.of<CredentialViewModel>(
+        context,
+        listen: false,
+      ).fetchCredentials();
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Opération terminée avec succès.')),
       );
@@ -53,7 +68,9 @@ class _CredentialListScreenState extends State<CredentialListScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Confirmer la suppression'),
-        content: Text('Êtes-vous sûr de vouloir supprimer l\'identifiant pour "$nomSiteCompte" ?'),
+        content: Text(
+          'Êtes-vous sûr de vouloir supprimer l\'identifiant pour "$nomSiteCompte" ?',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
@@ -68,14 +85,25 @@ class _CredentialListScreenState extends State<CredentialListScreen> {
     );
 
     if (confirm == true) {
-      final success = await Provider.of<CredentialViewModel>(context, listen: false).deleteCredential(id);
+      final success = await Provider.of<CredentialViewModel>(
+        context,
+        listen: false,
+      ).deleteCredential(id);
       if (success) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Identifiant pour "$nomSiteCompte" supprimé avec succès !')),
+          SnackBar(
+            content: Text(
+              'Identifiant pour "$nomSiteCompte" supprimé avec succès !',
+            ),
+          ),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erreur lors de la suppression de l\'identifiant pour "$nomSiteCompte".')),
+          SnackBar(
+            content: Text(
+              'Erreur lors de la suppression de l\'identifiant pour "$nomSiteCompte".',
+            ),
+          ),
         );
       }
     }
@@ -115,58 +143,74 @@ class _CredentialListScreenState extends State<CredentialListScreen> {
               child: credentialViewModel.isLoading
                   ? const Center(child: CircularProgressIndicator())
                   : credentialViewModel.errorMessage != null
-                      ? Center(
-                          child: Padding(
-                            padding: const EdgeInsets.all(16.0),
-                            child: Text(
-                              credentialViewModel.errorMessage!,
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(color: Colors.red),
-                            ),
+                  ? Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Text(
+                          credentialViewModel.errorMessage!,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(color: Colors.red),
+                        ),
+                      ),
+                    )
+                  : credentialViewModel.credentials.isEmpty
+                  ? Center(
+                      child: Text(
+                        _searchController.text.isNotEmpty
+                            ? 'Aucun identifiant trouvé pour "${_searchController.text}".'
+                            : 'Aucun identifiant trouvé. Appuyez sur "+" pour en ajouter un.',
+                      ),
+                    )
+                  : ListView.builder(
+                      itemCount: credentialViewModel.credentials.length,
+                      itemBuilder: (context, index) {
+                        final credential =
+                            credentialViewModel.credentials[index];
+                        return Card(
+                          margin: const EdgeInsets.symmetric(
+                            horizontal: 8.0,
+                            vertical: 4.0,
                           ),
-                        )
-                      : credentialViewModel.credentials.isEmpty
-                          ? Center(
-                              child: Text(
-                                _searchController.text.isNotEmpty
-                                    ? 'Aucun identifiant trouvé pour "${_searchController.text}".'
-                                    : 'Aucun identifiant trouvé. Appuyez sur "+" pour en ajouter un.',
-                              ),
-                            )
-                          : ListView.builder(
-                              itemCount: credentialViewModel.credentials.length,
-                              itemBuilder: (context, index) {
-                                final credential = credentialViewModel.credentials[index];
-                                return Card(
-                                  margin: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-                                  child: ListTile(
-                                    leading: const Icon(Icons.lock),
-                                    title: Text(credential.nomSiteCompte),
-                                    subtitle: Text('Utilisateur: ${credential.nomUtilisateurEmail}'),
-                                    trailing: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        IconButton(
-                                          icon: const Icon(Icons.edit),
-                                          onPressed: () => _navigateToAddEditCredential(credential: credential),
-                                        ),
-                                        IconButton(
-                                          icon: const Icon(Icons.delete, color: Colors.red),
-                                          onPressed: () => _confirmAndDeleteCredential(credential.id, credential.nomSiteCompte),
-                                        ),
-                                      ],
-                                    ),
-                                    onTap: () {
-                                      Navigator.of(context).push(
-                                        MaterialPageRoute(
-                                          builder: (context) => CredentialDetailScreen(credential: credential),
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                );
-                              },
+                          child: ListTile(
+                            leading: const Icon(Icons.lock),
+                            title: Text(credential.nomSiteCompte),
+                            subtitle: Text(
+                              'Utilisateur: ${credential.nomUtilisateurEmail}',
                             ),
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                IconButton(
+                                  icon: const Icon(Icons.edit),
+                                  onPressed: () => _navigateToAddEditCredential(
+                                    credential: credential,
+                                  ),
+                                ),
+                                IconButton(
+                                  icon: const Icon(
+                                    Icons.delete,
+                                    color: Colors.red,
+                                  ),
+                                  onPressed: () => _confirmAndDeleteCredential(
+                                    credential.id,
+                                    credential.nomSiteCompte,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            onTap: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (context) => CredentialDetailScreen(
+                                    credential: credential,
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        );
+                      },
+                    ),
             ),
           ],
         );

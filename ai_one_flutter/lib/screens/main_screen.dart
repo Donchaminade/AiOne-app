@@ -141,7 +141,7 @@ class DashboardContent extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'Votre assistant personnel intelligent.',
+              'Faites tout dans une seule application : Contacts, Notes, Identifiants et Tâches.',
               style: Theme.of(
                 context,
               ).textTheme.titleMedium?.copyWith(color: Colors.grey[700]),

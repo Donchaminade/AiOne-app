@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:ai_one_flutter/models/contact.dart';
 import 'package:ai_one_flutter/screens/contacts/contact_form_screen.dart'; // Pour l'édition
 import 'package:url_launcher/url_launcher.dart' as url_launcher;
-import 'package:url_launcher/url_launcher_string.dart'; // Pour les URL
+//import 'package:url_launcher/url_launcher_string.dart'; // Pour les URL
 
 class ContactDetailScreen extends StatelessWidget {
   final Contact contact;

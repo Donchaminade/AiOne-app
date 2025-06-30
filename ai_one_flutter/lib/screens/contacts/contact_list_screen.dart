@@ -406,7 +406,7 @@ class _ContactListScreenState extends State<ContactListScreen> {
                   IconButton(
                     icon: const Icon(Icons.delete, color: Colors.red), // Rouge pour la suppression
                     tooltip: 'Supprimer',
-                    onPressed: () => _confirmAndDeleteContact(contact.id!, contact.nomComplet),
+                    onPressed: () => _confirmAndDeleteContact(contact.id, contact.nomComplet),
                   ),
                 ],
               ),

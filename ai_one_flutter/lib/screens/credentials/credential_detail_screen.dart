@@ -20,7 +20,11 @@ class _CredentialDetailScreenState extends State<CredentialDetailScreen> {
   bool _showPassword = false;
 
   // Méthode pour copier du texte dans le presse-papiers
-  Future<void> _copyToClipboard(BuildContext context, String text, String fieldName) async {
+  Future<void> _copyToClipboard(
+    BuildContext context,
+    String text,
+    String fieldName,
+  ) async {
     await Clipboard.setData(ClipboardData(text: text));
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -40,7 +44,9 @@ class _CredentialDetailScreenState extends State<CredentialDetailScreen> {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Aucune méthode d\'authentification biométrique/locale configurée sur cet appareil.'),
+              content: Text(
+                'Aucune méthode d\'authentification biométrique/locale configurée sur cet appareil.',
+              ),
               backgroundColor: Colors.orange,
             ),
           );
@@ -49,10 +55,12 @@ class _CredentialDetailScreenState extends State<CredentialDetailScreen> {
       }
 
       final bool didAuthenticate = await auth.authenticate(
-        localizedReason: 'Veuillez vous authentifier pour afficher le mot de passe',
+        localizedReason:
+            'Veuillez vous authentifier pour afficher le mot de passe',
         options: const AuthenticationOptions(
           stickyAuth: true,
-          biometricOnly: false, // Permet aussi le code PIN/motif/empreinte digitale si biométrie non dispo
+          biometricOnly:
+              false, // Permet aussi le code PIN/motif/empreinte digitale si biométrie non dispo
         ),
       );
 
@@ -98,10 +106,7 @@ class _CredentialDetailScreenState extends State<CredentialDetailScreen> {
         pageBuilder: (context, animation, secondaryAnimation) =>
             CredentialFormScreen(credential: widget.credential),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          return FadeTransition(
-            opacity: animation,
-            child: child,
-          );
+          return FadeTransition(opacity: animation, child: child);
         },
         transitionDuration: const Duration(milliseconds: 400),
       ),
@@ -113,7 +118,9 @@ class _CredentialDetailScreenState extends State<CredentialDetailScreen> {
         // Dans un cas réel, vous rafraîchiriez les données du credential ici
         // ou vous rechargeriez la liste via un ViewModel si c'était un Provider.
         // Pour cet exemple simple, nous allons simplement revenir en arrière.
-        Navigator.of(context).pop(true); // Signale à l'écran précédent qu'une mise à jour a eu lieu
+        Navigator.of(
+          context,
+        ).pop(true); // Signale à l'écran précédent qu'une mise à jour a eu lieu
       }
     }
   }
@@ -123,12 +130,17 @@ class _CredentialDetailScreenState extends State<CredentialDetailScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.credential.nomSiteCompte),
-        titleTextStyle: Theme.of(context).textTheme.titleLarge?.copyWith(color: Colors.white),
+        titleTextStyle: Theme.of(
+          context,
+        ).textTheme.titleLarge?.copyWith(color: Colors.white),
         iconTheme: const IconThemeData(color: Colors.white),
         flexibleSpace: Container(
           decoration: const BoxDecoration(
             gradient: LinearGradient(
-              colors: [Color(0xFF673AB7), Color(0xFF5C6BC0)], // Correspond au dégradé des autres écrans
+              colors: [
+                Color(0xFF673AB7),
+                Color(0xFF5C6BC0),
+              ], // Correspond au dégradé des autres écrans
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
@@ -205,12 +217,12 @@ class _CredentialDetailScreenState extends State<CredentialDetailScreen> {
 
   // Widget générique pour construire une carte d'information
   Widget _buildInfoCard(
-      BuildContext context, {
-        required IconData icon,
-        required String title,
-        required String? value,
-        bool isCopyable = false,
-      }) {
+    BuildContext context, {
+    required IconData icon,
+    required String title,
+    required String? value,
+    bool isCopyable = false,
+  }) {
     if (value == null || value.isEmpty) {
       return const SizedBox.shrink(); // Ne rien afficher si la valeur est vide
     }
@@ -233,26 +245,33 @@ class _CredentialDetailScreenState extends State<CredentialDetailScreen> {
                   Text(
                     title,
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.grey[700],
-                        ),
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey[700],
+                    ),
                   ),
                   const SizedBox(height: 5),
                   Text(
-                    value!, // Corrected: Use null-aware operator !
+                    value, // Corrected: Use null-aware operator !
                     style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          color: Colors.black87,
-                          fontSize: 17,
-                        ),
+                      color: Colors.black87,
+                      fontSize: 17,
+                    ),
                   ),
                 ],
               ),
             ),
             if (isCopyable)
               IconButton(
-                icon: Icon(Icons.copy, color: Theme.of(context).colorScheme.secondary),
+                icon: Icon(
+                  Icons.copy,
+                  color: Theme.of(context).colorScheme.secondary,
+                ),
                 tooltip: 'Copier $title',
-                onPressed: () => _copyToClipboard(context, value!, title), // Corrected: Use null-aware operator !
+                onPressed: () => _copyToClipboard(
+                  context,
+                  value,
+                  title,
+                ), // Corrected: Use null-aware operator !
               ),
           ],
         ),
@@ -273,14 +292,18 @@ class _CredentialDetailScreenState extends State<CredentialDetailScreen> {
           children: [
             Row(
               children: [
-                Icon(Icons.vpn_key, size: 28, color: Theme.of(context).colorScheme.primary),
+                Icon(
+                  Icons.vpn_key,
+                  size: 28,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
                 const SizedBox(width: 15),
                 Text(
                   'Mot de Passe',
                   style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.grey[700],
-                      ),
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey[700],
+                  ),
                 ),
               ],
             ),
@@ -289,7 +312,8 @@ class _CredentialDetailScreenState extends State<CredentialDetailScreen> {
               child: _showPassword
                   ? Text(
                       widget.credential.motDePasseChiffre!, // Corrected line
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      style: Theme.of(context).textTheme.headlineSmall
+                          ?.copyWith(
                             fontWeight: FontWeight.bold,
                             color: Colors.deepPurple,
                             letterSpacing: 1.2,
@@ -297,7 +321,8 @@ class _CredentialDetailScreenState extends State<CredentialDetailScreen> {
                     )
                   : Text(
                       '••••••••••••',
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      style: Theme.of(context).textTheme.headlineSmall
+                          ?.copyWith(
                             fontWeight: FontWeight.bold,
                             color: Colors.grey,
                             letterSpacing: 2.0,
@@ -312,14 +337,23 @@ class _CredentialDetailScreenState extends State<CredentialDetailScreen> {
                     width: double.infinity,
                     child: ElevatedButton.icon(
                       onPressed: () => _authenticateAndShowPassword(context),
-                      icon: Icon(_showPassword ? Icons.visibility_off : Icons.visibility, color: Colors.white),
+                      icon: Icon(
+                        _showPassword ? Icons.visibility_off : Icons.visibility,
+                        color: Colors.white,
+                      ),
                       label: Text(
-                        _showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe',
+                        _showPassword
+                            ? 'Masquer le mot de passe'
+                            : 'Afficher le mot de passe',
                         style: const TextStyle(color: Colors.white),
                       ),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: _showPassword ? Colors.orange : Theme.of(context).colorScheme.secondary,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
+                        backgroundColor: _showPassword
+                            ? Colors.orange
+                            : Theme.of(context).colorScheme.secondary,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8.0),
+                        ),
                         padding: const EdgeInsets.symmetric(vertical: 12),
                       ),
                     ),
@@ -332,14 +366,19 @@ class _CredentialDetailScreenState extends State<CredentialDetailScreen> {
                         // Pour la copie, nous devons aussi authentifier si le mot de passe n'est pas déjà affiché
                         if (!_showPassword) {
                           final bool didAuthenticate = await auth.authenticate(
-                            localizedReason: 'Authentifiez-vous pour copier le mot de passe',
-                            options: const AuthenticationOptions(biometricOnly: false),
+                            localizedReason:
+                                'Authentifiez-vous pour copier le mot de passe',
+                            options: const AuthenticationOptions(
+                              biometricOnly: false,
+                            ),
                           );
                           if (!didAuthenticate) {
                             if (context.mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
-                                  content: Text('Authentification annulée ou échouée.'),
+                                  content: Text(
+                                    'Authentification annulée ou échouée.',
+                                  ),
                                   backgroundColor: Colors.red,
                                 ),
                               );
@@ -348,14 +387,23 @@ class _CredentialDetailScreenState extends State<CredentialDetailScreen> {
                           }
                         }
                         if (context.mounted) {
-                          _copyToClipboard(context, widget.credential.motDePasseChiffre!, 'Mot de passe'); // Corrected line
+                          _copyToClipboard(
+                            context,
+                            widget.credential.motDePasseChiffre!,
+                            'Mot de passe',
+                          ); // Corrected line
                         }
                       },
                       icon: const Icon(Icons.copy, color: Colors.white),
-                      label: const Text('Copier le mot de passe', style: TextStyle(color: Colors.white)),
+                      label: const Text(
+                        'Copier le mot de passe',
+                        style: TextStyle(color: Colors.white),
+                      ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.green,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8.0),
+                        ),
                         padding: const EdgeInsets.symmetric(vertical: 12),
                       ),
                     ),

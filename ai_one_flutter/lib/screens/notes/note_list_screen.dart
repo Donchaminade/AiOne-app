@@ -26,7 +26,10 @@ class _NoteListScreenState extends State<NoteListScreen> {
     });
     // Ajouter un listener pour la barre de recherche
     _searchController.addListener(() {
-      Provider.of<NoteViewModel>(context, listen: false).setSearchTerm(_searchController.text);
+      Provider.of<NoteViewModel>(
+        context,
+        listen: false,
+      ).setSearchTerm(_searchController.text);
     });
   }
 
@@ -46,12 +49,10 @@ class _NoteListScreenState extends State<NoteListScreen> {
   void _navigateToAddEditNote({Note? note}) async {
     final bool? result = await Navigator.of(context).push(
       PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) => NoteFormScreen(note: note),
+        pageBuilder: (context, animation, secondaryAnimation) =>
+            NoteFormScreen(note: note),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          return FadeTransition(
-            opacity: animation,
-            child: child,
-          );
+          return FadeTransition(opacity: animation, child: child);
         },
         transitionDuration: const Duration(milliseconds: 400),
       ),
@@ -75,22 +76,37 @@ class _NoteListScreenState extends State<NoteListScreen> {
     final bool? confirm = await showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15.0)),
-        title: const Text('Confirmer la suppression', style: TextStyle(fontWeight: FontWeight.bold)),
-        content: Text('Êtes-vous sûr de vouloir supprimer la note "$titre" ? Cette action est irréversible.',
-            style: TextStyle(color: Colors.grey[700])),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(15.0),
+        ),
+        title: const Text(
+          'Confirmer la suppression',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        content: Text(
+          'Êtes-vous sûr de vouloir supprimer la note "$titre" ? Cette action est irréversible.',
+          style: TextStyle(color: Colors.grey[700]),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: Text('Annuler', style: TextStyle(color: Theme.of(context).colorScheme.primary)),
+            child: Text(
+              'Annuler',
+              style: TextStyle(color: Theme.of(context).colorScheme.primary),
+            ),
           ),
           ElevatedButton(
             onPressed: () => Navigator.of(context).pop(true),
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red, // Couleur rouge pour supprimer
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8.0),
+              ),
             ),
-            child: const Text('Supprimer', style: TextStyle(color: Colors.white)),
+            child: const Text(
+              'Supprimer',
+              style: TextStyle(color: Colors.white),
+            ),
           ),
         ],
       ),
@@ -111,7 +127,10 @@ class _NoteListScreenState extends State<NoteListScreen> {
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(noteViewModel.errorMessage ?? 'Erreur lors de la suppression de la note "$titre".'),
+              content: Text(
+                noteViewModel.errorMessage ??
+                    'Erreur lors de la suppression de la note "$titre".',
+              ),
               backgroundColor: Colors.red,
             ),
           );
@@ -125,12 +144,17 @@ class _NoteListScreenState extends State<NoteListScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Mes Notes'),
-        titleTextStyle: Theme.of(context).textTheme.titleLarge?.copyWith(color: Colors.white),
+        titleTextStyle: Theme.of(
+          context,
+        ).textTheme.titleLarge?.copyWith(color: Colors.white),
         iconTheme: const IconThemeData(color: Colors.white),
         flexibleSpace: Container(
           decoration: const BoxDecoration(
             gradient: LinearGradient(
-              colors: [Color(0xFF673AB7), Color(0xFF5C6BC0)], // Correspond au dégradé des autres écrans
+              colors: [
+                Color(0xFF673AB7),
+                Color(0xFF5C6BC0),
+              ], // Correspond au dégradé des autres écrans
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
@@ -157,18 +181,29 @@ class _NoteListScreenState extends State<NoteListScreen> {
                   decoration: InputDecoration(
                     labelText: 'Rechercher une note',
                     hintText: 'Titre, contenu, dossier, tag...',
-                    prefixIcon: Icon(Icons.search, color: Theme.of(context).colorScheme.primary),
+                    prefixIcon: Icon(
+                      Icons.search,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12.0),
-                      borderSide: BorderSide(color: Theme.of(context).colorScheme.primary),
+                      borderSide: BorderSide(
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12.0),
-                      borderSide: BorderSide(color: Colors.grey[400]!, width: 1.0),
+                      borderSide: BorderSide(
+                        color: Colors.grey[400]!,
+                        width: 1.0,
+                      ),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12.0),
-                      borderSide: BorderSide(color: Theme.of(context).colorScheme.primary, width: 2.0),
+                      borderSide: BorderSide(
+                        color: Theme.of(context).colorScheme.primary,
+                        width: 2.0,
+                      ),
                     ),
                     suffixIcon: _searchController.text.isNotEmpty
                         ? IconButton(
@@ -176,13 +211,18 @@ class _NoteListScreenState extends State<NoteListScreen> {
                             onPressed: () {
                               _searchController.clear();
                               noteViewModel.setSearchTerm('');
-                              FocusScope.of(context).unfocus(); // Masquer le clavier
+                              FocusScope.of(
+                                context,
+                              ).unfocus(); // Masquer le clavier
                             },
                           )
                         : null,
                     filled: true,
                     fillColor: Colors.white,
-                    contentPadding: const EdgeInsets.symmetric(vertical: 15.0, horizontal: 15.0),
+                    contentPadding: const EdgeInsets.symmetric(
+                      vertical: 15.0,
+                      horizontal: 15.0,
+                    ),
                   ),
                 ),
               ),
@@ -192,140 +232,203 @@ class _NoteListScreenState extends State<NoteListScreen> {
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            CircularProgressIndicator(color: Theme.of(context).colorScheme.primary),
+                            CircularProgressIndicator(
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
                             const SizedBox(height: 10),
                             Text(
                               'Chargement des notes...',
-                              style: TextStyle(color: Colors.grey[700], fontSize: 16),
+                              style: TextStyle(
+                                color: Colors.grey[700],
+                                fontSize: 16,
+                              ),
                             ),
                           ],
                         ),
                       )
                     : noteViewModel.errorMessage != null
-                        ? Center(
-                            child: Padding(
-                              padding: const EdgeInsets.all(16.0),
-                              child: Text(
-                                noteViewModel.errorMessage!,
-                                textAlign: TextAlign.center,
-                                style: const TextStyle(color: Colors.red, fontSize: 16),
-                              ),
+                    ? Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Text(
+                            noteViewModel.errorMessage!,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              color: Colors.red,
+                              fontSize: 16,
                             ),
-                          )
-                        : noteViewModel.notes.isEmpty
-                            ? Center(
-                                child: Padding(
-                                  padding: const EdgeInsets.all(20.0),
-                                  child: Text(
-                                    _searchController.text.isNotEmpty
-                                        ? 'Aucune note trouvée pour "${_searchController.text}".'
-                                        : 'Aucune note n\'a été trouvée. Appuyez sur le bouton "+" pour en ajouter une.',
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(fontSize: 18, color: Colors.grey[600]),
-                                  ),
-                                ),
-                              )
-                            : ListView.builder(
-                                itemCount: noteViewModel.notes.length,
-                                itemBuilder: (context, index) {
-                                  final note = noteViewModel.notes[index];
-                                  return Card(
-                                    margin: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
-                                    elevation: 3.0,
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
-                                    child: InkWell(
-                                      onTap: () async {
-                                        // Naviguer vers les détails, et rafraîchir si des changements ont eu lieu
-                                        final bool? result = await Navigator.of(context).push(
-                                          PageRouteBuilder(
-                                            pageBuilder: (context, animation, secondaryAnimation) =>
-                                                NoteDetailScreen(note: note),
-                                            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                          ),
+                        ),
+                      )
+                    : noteViewModel.notes.isEmpty
+                    ? Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(20.0),
+                          child: Text(
+                            _searchController.text.isNotEmpty
+                                ? 'Aucune note trouvée pour "${_searchController.text}".'
+                                : 'Aucune note n\'a été trouvée. Appuyez sur le bouton "+" pour en ajouter une.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 18,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        ),
+                      )
+                    : ListView.builder(
+                        itemCount: noteViewModel.notes.length,
+                        itemBuilder: (context, index) {
+                          final note = noteViewModel.notes[index];
+                          return Card(
+                            margin: const EdgeInsets.symmetric(
+                              horizontal: 12.0,
+                              vertical: 6.0,
+                            ),
+                            elevation: 3.0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12.0),
+                            ),
+                            child: InkWell(
+                              onTap: () async {
+                                // Naviguer vers les détails, et rafraîchir si des changements ont eu lieu
+                                final bool? result = await Navigator.of(context)
+                                    .push(
+                                      PageRouteBuilder(
+                                        pageBuilder:
+                                            (
+                                              context,
+                                              animation,
+                                              secondaryAnimation,
+                                            ) => NoteDetailScreen(note: note),
+                                        transitionsBuilder:
+                                            (
+                                              context,
+                                              animation,
+                                              secondaryAnimation,
+                                              child,
+                                            ) {
                                               return FadeTransition(
                                                 opacity: animation,
                                                 child: child,
                                               );
                                             },
-                                            transitionDuration: const Duration(milliseconds: 400),
-                                          ),
-                                        );
-                                        if (result == true) {
-                                          noteViewModel.fetchNotes(); // Recharger la liste si la note a été modifiée/supprimée via l'écran de détail
-                                        }
-                                      },
-                                      child: Padding(
-                                        padding: const EdgeInsets.all(10.0),
-                                        child: Row(
-                                          children: [
-                                            Icon(
-                                              Icons.note,
-                                              size: 30,
-                                              color: Theme.of(context).colorScheme.primary,
-                                            ),
-                                            const SizedBox(width: 15),
-                                            Expanded(
-                                              child: Column(
-                                                crossAxisAlignment: CrossAxisAlignment.start,
-                                                children: [
-                                                  Text(
-                                                    note.titre,
-                                                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                                          fontWeight: FontWeight.bold,
-                                                          color: Colors.deepPurple,
-                                                        ),
-                                                    maxLines: 1,
-                                                    overflow: TextOverflow.ellipsis,
-                                                  ),
-                                                  const SizedBox(height: 4),
-                                                  Text(
-                                                    note.sousTitre != null && note.sousTitre!.isNotEmpty
-                                                        ? note.sousTitre!
-                                                        : (note.contenu != null && note.contenu!.isNotEmpty
-                                                            ? note.contenu!
-                                                            : 'Aucun contenu'),
-                                                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                                          color: Colors.grey[700],
-                                                        ),
-                                                    maxLines: 2, // Affiche plus de contenu/sous-titre
-                                                    overflow: TextOverflow.ellipsis,
-                                                  ),
-                                                  if (note.tagsLabels != null && note.tagsLabels!.isNotEmpty) ...[
-                                                    const SizedBox(height: 4),
-                                                    Text(
-                                                      'Tags: ${note.tagsLabels}',
-                                                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                                            color: Colors.blueGrey,
-                                                            fontStyle: FontStyle.italic,
-                                                          ),
-                                                      maxLines: 1,
-                                                      overflow: TextOverflow.ellipsis,
-                                                    ),
-                                                  ],
-                                                ],
-                                              ),
-                                            ),
-                                            Column(
-                                              mainAxisSize: MainAxisSize.min,
-                                              children: [
-                                                IconButton(
-                                                  icon: Icon(Icons.edit, color: Theme.of(context).colorScheme.secondary),
-                                                  tooltip: 'Modifier la note',
-                                                  onPressed: () => _navigateToAddEditNote(note: note),
-                                                ),
-                                                IconButton(
-                                                  icon: const Icon(Icons.delete, color: Colors.red),
-                                                  tooltip: 'Supprimer la note',
-                                                  onPressed: () => _confirmAndDeleteNote(note.id!, note.titre),
-                                                ),
-                                              ],
-                                            ),
-                                          ],
+                                        transitionDuration: const Duration(
+                                          milliseconds: 400,
                                         ),
                                       ),
+                                    );
+                                if (result == true) {
+                                  noteViewModel
+                                      .fetchNotes(); // Recharger la liste si la note a été modifiée/supprimée via l'écran de détail
+                                }
+                              },
+                              child: Padding(
+                                padding: const EdgeInsets.all(10.0),
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.note,
+                                      size: 30,
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.primary,
                                     ),
-                                  );
-                                },
+                                    const SizedBox(width: 15),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            note.titre,
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .titleMedium
+                                                ?.copyWith(
+                                                  fontWeight: FontWeight.bold,
+                                                  color: Colors.deepPurple,
+                                                ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            note.sousTitre != null &&
+                                                    note.sousTitre!.isNotEmpty
+                                                ? note.sousTitre!
+                                                : (note.contenu != null &&
+                                                          note
+                                                              .contenu!
+                                                              .isNotEmpty
+                                                      ? note.contenu!
+                                                      : 'Aucun contenu'),
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .bodyMedium
+                                                ?.copyWith(
+                                                  color: Colors.grey[700],
+                                                ),
+                                            maxLines:
+                                                2, // Affiche plus de contenu/sous-titre
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                          if (note.tagsLabels != null &&
+                                              note.tagsLabels!.isNotEmpty) ...[
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              'Tags: ${note.tagsLabels}',
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .bodySmall
+                                                  ?.copyWith(
+                                                    color: Colors.blueGrey,
+                                                    fontStyle: FontStyle.italic,
+                                                  ),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ],
+                                        ],
+                                      ),
+                                    ),
+                                    Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        IconButton(
+                                          icon: Icon(
+                                            Icons.edit,
+                                            color: Theme.of(
+                                              context,
+                                            ).colorScheme.secondary,
+                                          ),
+                                          tooltip: 'Modifier la note',
+                                          onPressed: () =>
+                                              _navigateToAddEditNote(
+                                                note: note,
+                                              ),
+                                        ),
+                                        IconButton(
+                                          icon: const Icon(
+                                            Icons.delete,
+                                            color: Colors.red,
+                                          ),
+                                          tooltip: 'Supprimer la note',
+                                          onPressed: () =>
+                                              _confirmAndDeleteNote(
+                                                note.id,
+                                                note.titre,
+                                              ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
                               ),
+                            ),
+                          );
+                        },
+                      ),
               ),
             ],
           );
