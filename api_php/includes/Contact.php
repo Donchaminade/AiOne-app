@@ -25,18 +25,71 @@ class Contact {
         $this->conn = $db;
     }
 
-    // Read all contacts
-    public function read() {
-        // Select all query
-        $query = "SELECT * FROM " . $this->table_name . " ORDER BY created_at DESC";
-
+    // Read all contacts avec pagination
+    public function read($page = 1, $limit = 10, $search = '', $orderBy = 'created_at', $orderDir = 'DESC') {
+        $offset = ($page - 1) * $limit;
+        
+        // Base query
+        $query = "SELECT * FROM " . $this->table_name;
+        
+        // Add search condition
+        $searchCondition = '';
+        if (!empty($search)) {
+            $searchCondition = " WHERE (nom_complet LIKE :search OR adresse_email LIKE :search OR profession LIKE :search OR entreprise_organisation LIKE :search)";
+        }
+        
+        // Validate order by field
+        $allowedOrderFields = ['nom_complet', 'adresse_email', 'profession', 'created_at', 'updated_at'];
+        if (!in_array($orderBy, $allowedOrderFields)) {
+            $orderBy = 'created_at';
+        }
+        
+        // Validate order direction
+        $orderDir = strtoupper($orderDir);
+        if (!in_array($orderDir, ['ASC', 'DESC'])) {
+            $orderDir = 'DESC';
+        }
+        
+        $query .= $searchCondition . " ORDER BY $orderBy $orderDir LIMIT :limit OFFSET :offset";
+        
         // Prepare statement
         $stmt = $this->conn->prepare($query);
-
+        
+        // Bind search parameter if needed
+        if (!empty($search)) {
+            $searchParam = "%$search%";
+            $stmt->bindParam(':search', $searchParam);
+        }
+        
+        // Bind pagination parameters
+        $stmt->bindParam(':limit', $limit, PDO::PARAM_INT);
+        $stmt->bindParam(':offset', $offset, PDO::PARAM_INT);
+        
         // Execute query
         $stmt->execute();
-
+        
         return $stmt;
+    }
+    
+    // Count total contacts pour pagination
+    public function count($search = '') {
+        $query = "SELECT COUNT(*) as total FROM " . $this->table_name;
+        
+        if (!empty($search)) {
+            $query .= " WHERE (nom_complet LIKE :search OR adresse_email LIKE :search OR profession LIKE :search OR entreprise_organisation LIKE :search)";
+        }
+        
+        $stmt = $this->conn->prepare($query);
+        
+        if (!empty($search)) {
+            $searchParam = "%$search%";
+            $stmt->bindParam(':search', $searchParam);
+        }
+        
+        $stmt->execute();
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        return (int) $row['total'];
     }
 
     // Read single contact

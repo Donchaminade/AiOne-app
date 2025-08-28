@@ -18,11 +18,60 @@ class Note {
         $this->conn = $db;
     }
 
-    public function read() {
-        $query = "SELECT * FROM " . $this->table_name . " ORDER BY created_at DESC";
+    public function read($page = 1, $limit = 10, $search = '', $orderBy = 'created_at', $orderDir = 'DESC') {
+        $offset = ($page - 1) * $limit;
+        
+        $query = "SELECT * FROM " . $this->table_name;
+        
+        $searchCondition = '';
+        if (!empty($search)) {
+            $searchCondition = " WHERE (titre LIKE :search OR sous_titre LIKE :search OR contenu LIKE :search OR dossiers LIKE :search)";
+        }
+        
+        $allowedOrderFields = ['titre', 'sous_titre', 'created_at', 'updated_at'];
+        if (!in_array($orderBy, $allowedOrderFields)) {
+            $orderBy = 'created_at';
+        }
+        
+        $orderDir = strtoupper($orderDir);
+        if (!in_array($orderDir, ['ASC', 'DESC'])) {
+            $orderDir = 'DESC';
+        }
+        
+        $query .= $searchCondition . " ORDER BY $orderBy $orderDir LIMIT :limit OFFSET :offset";
+        
         $stmt = $this->conn->prepare($query);
+        
+        if (!empty($search)) {
+            $searchParam = "%$search%";
+            $stmt->bindParam(':search', $searchParam);
+        }
+        
+        $stmt->bindParam(':limit', $limit, PDO::PARAM_INT);
+        $stmt->bindParam(':offset', $offset, PDO::PARAM_INT);
+        
         $stmt->execute();
         return $stmt;
+    }
+    
+    public function count($search = '') {
+        $query = "SELECT COUNT(*) as total FROM " . $this->table_name;
+        
+        if (!empty($search)) {
+            $query .= " WHERE (titre LIKE :search OR sous_titre LIKE :search OR contenu LIKE :search OR dossiers LIKE :search)";
+        }
+        
+        $stmt = $this->conn->prepare($query);
+        
+        if (!empty($search)) {
+            $searchParam = "%$search%";
+            $stmt->bindParam(':search', $searchParam);
+        }
+        
+        $stmt->execute();
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        return (int) $row['total'];
     }
 
     public function readOne() {
